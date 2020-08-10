@@ -1,0 +1,19 @@
+{
+  "name": "streamandgrowpi",
+  "version": "1.0.0",
+  "description": "Run this application on your raspberry pi to stream to the streamandgrow website.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Cam Gallucci",
+  "license": "ISC",
+  "dependencies": {
+    "fetch-cookie": "^0.10.1",
+    "node-fetch": "^2.6.0",
+    "prompts": "^2.3.2",
+    "puppeteer": "^5.2.1",
+    "tough-cookie": "^4.0.0",
+    "yargs": "^15.4.1"
+  }
+}
