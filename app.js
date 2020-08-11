@@ -99,7 +99,7 @@ const getStreams = async () => {
 	if (streams.find(found => found._id === id)) {
 		console.log('oooh');
 	}
-	const browser = await  puppeteer.launch({executablePath: 'usr/bin/chromium-browser', args:['--use-fake-ui-for-media-server']});
+	const browser = await  puppeteer.launch({executablePath: '/usr/bin/chromium-browser', args:['--use-fake-ui-for-media-stream']});
 	const context = await browser.defaultBrowserContext();
 	await context.overridePermissions(`https://streamandgrow.herokuapp.com/streamerPage/${id}`, ['camera']);
 	const page = await context.newPage();
