@@ -4,7 +4,7 @@ const tough = require('tough-cookie');
 let jar = new tough.CookieJar();
 const fetch = require('fetch-cookie/node-fetch')(nodefetch, jar, true);
 const prompts = require('prompts');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 
 const options = yargs
 	.usage('Usage: -u <username> -i <stream id>')
@@ -99,10 +99,14 @@ const getStreams = async () => {
 	if (streams.find(found => found._id === id)) {
 		console.log('oooh');
 	}
-	const browser = await puppeteer.launch();
+	const browser = await puppeteer.launch({ product: "chrome" });
 	const context = await browser.defaultBrowserContext();
 	await context.overridePermissions(`https://streamandgrow.herokuapp.com/streamerPage/${id}`, ['camera']);
 	const page = await context.newPage();
+	page.on('console', msg => {
+		for (let i = 0; i < msg.args().length; ++i)
+			console.log(`${i}: ${msg.args()[i]}`);
+	});
 	//page.setCookie(cookie);
 	await page.goto(`https://streamandgrow.herokuapp.com/streamerPage/${id}`);
 

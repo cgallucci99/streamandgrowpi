@@ -13,6 +13,7 @@
     "node-fetch": "^2.6.0",
     "prompts": "^2.3.2",
     "puppeteer": "^5.2.1",
+    "puppeteer-core": "^5.2.1",
     "tough-cookie": "^4.0.0",
     "yargs": "^15.4.1"
   }
