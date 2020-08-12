@@ -5,7 +5,12 @@ let jar = new tough.CookieJar();
 const fetch = require('fetch-cookie/node-fetch')(nodefetch, jar, true);
 const prompts = require('prompts');
 const puppeteer = require('puppeteer-core');
+const mqtt = require('mqtt');
+const frontURL = 'https://streamandgrow.herokuapp.com';
+const backURL = 'https://intense-wildwood-99025.herokuapp.com';
+const mqttURL = '';
 
+// options to start app
 const options = yargs
 	.usage('Usage: -u <username> -i <stream id>')
 	.option('u', { alias: 'username', describe: 'Your username', type: 'string', demandOption: false })
@@ -16,7 +21,8 @@ let username = options.username;
 let id = options.id;
 let password = null;
 let user = null;
-
+let streaming = false;
+// questions to start application
 const questions = [
 	{
 		type: options.username ? null : 'text',
@@ -34,12 +40,11 @@ const questions = [
 		message: 'Stream ID: ',
 	},
 ];
-
+// signs in a user
 const signIn = async () => {
 	const data = `username=${username}&password=${password}`;
-	// Fetch call that is being made to the backend, should change the hardcoded URL to one that
-	// is set in a .env or config file
-	let results = await fetch('https://intense-wildwood-99025.herokuapp.com/auth/login', {
+	// Fetch call that is being made to the backend
+	let results = await fetch(`${backURL}/auth/login`, {
 		method: 'POST',
 		credentials: 'include',
 		body: data,
@@ -50,7 +55,6 @@ const signIn = async () => {
 		},
 	});
 	let body = await results.json();
-	console.log(body);
 	if (body.message === 'Success') {
 		user = body.user;
 		return true;
@@ -58,11 +62,11 @@ const signIn = async () => {
 		return false;
 	}
 }
+// gets a list of the user's streams
 const getStreams = async () => {
-	const data = `owner=${user._id}`;
-	// Fetch call that is being made to the backend, should change the hardcoded URL to one that
-	// is set in a .env or config file
-	let results = await fetch('https://intense-wildwood-99025.herokuapp.com/streams/stream/getUserStreams', {
+	const data = `owner=${user.username}`;
+	// Fetch call that is being made to the backend
+	let results = await fetch(`${backURL}/streams/stream/getUserStreams`, {
 		method: 'POST',
 		credentials: 'include',
 		body: data,
@@ -73,7 +77,6 @@ const getStreams = async () => {
 		},
 	});
 	let body = await results.json();
-	console.log(body);
 	if (body.message !== 'fail') {
 		return body.data;
 	} else {
@@ -83,6 +86,7 @@ const getStreams = async () => {
 
 
 (async () => {
+	// prompt user to sign in and provide stream id
 	const response = await prompts(questions);
 	if (response.username) {
 		username = response.username;
@@ -91,25 +95,56 @@ const getStreams = async () => {
 		id = response.id;
 	}
 	password = response.password;
-	console.log(`username: ${username}, password: ${password}  id: ${id}`);
+	// check credentials
 	let auth = await signIn();
-	console.log('auth: ', auth);
-	let streams = await getStreams();
-	console.log(streams);
-	if (streams.find(found => found._id === id)) {
-		console.log('oooh');
+	if (auth) {
+		console.log('authentication successful');
+	} else {
+		console.log('authentication failed');
 	}
-	const browser = await  puppeteer.launch({executablePath: '/usr/bin/chromium-browser', args:['--use-fake-ui-for-media-stream']});
+	// check to see if the authenticated user owns the stream
+	let streams = await getStreams();
+	if (streams.find(found => found._id === id)) {
+		console.log('found stream')
+	} else {
+		console.log(`you do not have access to the stream ${id}`);
+		return;
+	}
+	// connect to the mqtt protocol
+	const client = mqtt.connect(mqttURL);
+
+	client.on('connect', () => {
+		client.subscribe('streamstatus');
+	});
+	client.on('message', (topic, message) => {
+		if (topic === 'streamstatus') {
+			if (message === `${id} on`) {
+				streaming = true;
+				stream();
+			}
+			if (message === `${id} off`) {
+				streaming = false;
+			}
+		}
+	});
+})();
+
+const stream = async () => {
+	// launch camera
+	const browser = await puppeteer.launch({ executablePath: '/usr/bin/chromium-browser', args: ['--use-fake-ui-for-media-stream'] });
 	const context = await browser.defaultBrowserContext();
-	await context.overridePermissions(`https://streamandgrow.herokuapp.com/streamerPage/${id}`, ['camera']);
+	await context.overridePermissions(`${frontURL}/streamerPage/${id}`, ['camera']);
 	const page = await context.newPage();
 	page.on('console', msg => {
 		for (let i = 0; i < msg.args().length; ++i)
 			console.log(`${i}: ${msg.args()[i]}`);
 	});
-	//page.setCookie(cookie);
-	await page.goto(`https://streamandgrow.herokuapp.com/streamerPage/${id}`);
-
-	//await browser.close();
-})();
-
+	await page.goto(`${frontURL}/streamerPage/${id}`);
+	// check to see if the stream is stopped every 2 seconds
+	setInterval(async () => {
+		if (!streaming) {
+			await browser.close();
+			return;
+		}
+	}, 2000);
+}
