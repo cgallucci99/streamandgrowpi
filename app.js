@@ -118,11 +118,11 @@ const getStreams = async () => {
 	});
 	client.on('message', (topic, message) => {
 		if (topic === 'streamstatus') {
-			if (message === `${id} on`) {
+			if (message.toString() === `${id} on`) {
 				streaming = true;
 				stream();
 			}
-			if (message === `${id} off`) {
+			if (message.toString() === `${id} off`) {
 				streaming = false;
 			}
 		}
