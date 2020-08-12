@@ -9,6 +9,8 @@
   "author": "Cam Gallucci",
   "license": "ISC",
   "dependencies": {
+    "chalk": "^4.1.0",
+    "dotenv": "^8.2.0",
     "fetch-cookie": "^0.10.1",
     "mqtt": "^4.1.0",
     "node-fetch": "^2.6.0",

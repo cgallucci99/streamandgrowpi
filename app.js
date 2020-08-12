@@ -6,9 +6,11 @@ const fetch = require('fetch-cookie/node-fetch')(nodefetch, jar, true);
 const prompts = require('prompts');
 const puppeteer = require('puppeteer-core');
 const mqtt = require('mqtt');
+const chalk = require('chalk');
+require('dotenv').config();
 const frontURL = 'https://streamandgrow.herokuapp.com';
 const backURL = 'https://intense-wildwood-99025.herokuapp.com';
-const mqttURL = '';
+const mqttURL = 'mqtt://mqtt.gameclient.me';
 
 // options to start app
 const options = yargs
@@ -98,20 +100,21 @@ const getStreams = async () => {
 	// check credentials
 	let auth = await signIn();
 	if (auth) {
-		console.log('authentication successful');
+		console.log(chalk.greenBright('✔ Authentication successful'));
 	} else {
-		console.log('authentication failed');
+		console.log(chalk.redBright.bold('✘ Authentication failed'));
+		return;
 	}
 	// check to see if the authenticated user owns the stream
 	let streams = await getStreams();
 	if (streams.find(found => found._id === id)) {
-		console.log('found stream')
+		console.log(chalk.greenBright('✔ Found stream'))
 	} else {
-		console.log(`you do not have access to the stream ${id}`);
+		console.log(`${chalk.redBright('✘ You do not have access to the stream')} ${chalk.cyanBright.bold(id)}`);
 		return;
 	}
 	// connect to the mqtt protocol
-	const client = mqtt.connect(mqttURL);
+	const client = mqtt.connect(mqttURL, { username: 'tcsRead', password: process.env.MQTTPWD });
 
 	client.on('connect', () => {
 		client.subscribe('streamstatus');
@@ -120,10 +123,12 @@ const getStreams = async () => {
 		if (topic === 'streamstatus') {
 			if (message.toString() === `${id} on`) {
 				streaming = true;
+				console.log(chalk.yellow('Starting stream...'));
 				stream();
 			}
 			if (message.toString() === `${id} off`) {
 				streaming = false;
+				console.log(chalk.yellow('Stopping stream...'));
 			}
 		}
 	});
