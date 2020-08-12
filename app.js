@@ -8,7 +8,7 @@ const puppeteer = require('puppeteer-core');
 const mqtt = require('mqtt');
 const chalk = require('chalk');
 require('dotenv').config();
-const frontURL = 'https://streamandgrow.herokuapp.com';
+const frontURL = 'http://192.168.1.89:3000';
 const backURL = 'https://intense-wildwood-99025.herokuapp.com';
 const mqttURL = 'mqtt://mqtt.gameclient.me';
 
@@ -117,9 +117,11 @@ const getStreams = async () => {
 	const client = mqtt.connect(mqttURL, { username: 'tcsRead', password: process.env.MQTTPWD });
 
 	client.on('connect', () => {
+		console.log(chalk.green('connected to mqtt'));
 		client.subscribe('streamstatus');
 	});
 	client.on('message', (topic, message) => {
+		console.log(chalk.yellow('message recieved: '), chalk.cyan(message.toString()), chalk.magentaBright(`topic: ${topic}`));
 		if (topic === 'streamstatus') {
 			if (message.toString() === `${id} on`) {
 				streaming = true;
