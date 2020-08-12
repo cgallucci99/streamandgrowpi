@@ -8,7 +8,7 @@ const puppeteer = require('puppeteer-core');
 const mqtt = require('mqtt');
 const chalk = require('chalk');
 require('dotenv').config();
-const frontURL = 'http://192.168.1.89:3000';
+const frontURL = 'https://streamandgrow.herokuapp.com';
 const backURL = 'https://intense-wildwood-99025.herokuapp.com';
 const mqttURL = 'mqtt://mqtt.gameclient.me';
 
