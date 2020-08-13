@@ -7,10 +7,13 @@ const prompts = require('prompts');
 const puppeteer = require('puppeteer-core');
 const mqtt = require('mqtt');
 const chalk = require('chalk');
+const ora = require('ora');
 require('dotenv').config();
 const frontURL = 'https://streamandgrow.herokuapp.com';
 const backURL = 'https://intense-wildwood-99025.herokuapp.com';
 const mqttURL = 'mqtt://mqtt.gameclient.me';
+
+const spinner = ora({ text: chalk.green('Listening for stream status updates...') });
 
 // options to start app
 const options = yargs
@@ -117,19 +120,20 @@ const getStreams = async () => {
 	const client = mqtt.connect(mqttURL, { username: 'tcsRead', password: process.env.MQTTPWD });
 
 	client.on('connect', () => {
-		console.log(chalk.green('connected to mqtt'));
 		client.subscribe('streamstatus');
+		spinner.start();
 	});
 	client.on('message', (topic, message) => {
 		if (topic === 'streamstatus') {
 			if (message.toString() === `${id} on`) {
 				streaming = true;
-				console.log(chalk.yellow('Starting stream...'));
+				spinner.succeed(chalk.yellow('Starting stream...'));
 				stream();
 			}
 			if (message.toString() === `${id} off`) {
 				streaming = false;
-				console.log(chalk.yellow('Stopping stream...'));
+				spinner.succeed(chalk.yellow('Stopping stream...'));
+				spinner.start(chalk.green('Listening for stream status updates... (press CTRL+C to stop)'));
 			}
 		}
 	});
@@ -143,14 +147,17 @@ const stream = async () => {
 	const page = await context.newPage();
 	page.on('console', msg => {
 		for (let i = 0; i < msg.args().length; ++i)
-			console.log(`${i}: ${msg.args()[i]}`);
+			spinner.info(`${i}: ${msg.args()[i]}`);
 	});
 	await page.goto(`${frontURL}/streamerPage/${id}`);
 	// check to see if the stream is stopped every 2 seconds
 	setInterval(async () => {
+		if (!spinner.isSpinning) {
+			spinner.start(chalk.green('Streaming...'));
+		}
 		if (!streaming) {
 			await browser.close();
 			return;
 		}
-	}, 2000);
+	}, 200);
 }
