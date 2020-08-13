@@ -121,7 +121,6 @@ const getStreams = async () => {
 		client.subscribe('streamstatus');
 	});
 	client.on('message', (topic, message) => {
-		console.log(chalk.yellow('message recieved: '), chalk.cyan(message.toString()), chalk.magentaBright(`topic: ${topic}`));
 		if (topic === 'streamstatus') {
 			if (message.toString() === `${id} on`) {
 				streaming = true;
