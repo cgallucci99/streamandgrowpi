@@ -9,8 +9,8 @@ const mqtt = require('mqtt');
 const chalk = require('chalk');
 const ora = require('ora');
 require('dotenv').config();
-const frontURL = 'https://streamandgrow.herokuapp.com';
-const backURL = 'https://intense-wildwood-99025.herokuapp.com';
+const frontURL = 'https://grow.gameclient.me';
+const backURL = 'https://growback.gameclient.me';
 const mqttURL = 'mqtt://mqtt.gameclient.me';
 
 const spinner = ora({ text: chalk.green('Listening for stream status updates...') });
